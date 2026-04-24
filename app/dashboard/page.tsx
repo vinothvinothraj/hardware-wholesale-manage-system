@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { useStore } from '@/lib/store'
+import type { Sale } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,7 +19,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { AlertTriangle, ArrowUpRight, Building2, Package2, ShoppingCart, Truck, Users } from 'lucide-react'
+import { AlertTriangle, ArrowUpRight, Building2, BadgeDollarSign, Package2, ShoppingCart, TrendingUp, Truck, Users, Percent } from 'lucide-react'
 
 function groupByDay(items: { date: Date; amount: number }[], days = 7) {
   const lookup = new Map<string, number>()
@@ -50,6 +51,12 @@ export default function DashboardPage() {
     const todayKey = now.toISOString().slice(0, 10)
     const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
+    const saleCost = (sale: Sale) =>
+      sale.lineItems.reduce((lineSum, item) => {
+        const variant = brandVariants.find(candidate => candidate.id === item.brandVariantId)
+        return lineSum + (variant?.costPrice || 0) * item.quantity
+      }, 0)
+
     const todaySales = sales.filter(sale => new Date(sale.saleDate).toISOString().slice(0, 10) === todayKey)
     const monthSales = sales.filter(sale => new Date(sale.saleDate).toISOString().slice(0, 7) === monthKey)
     const monthPurchases = purchases.filter(purchase => new Date(purchase.purchaseDate).toISOString().slice(0, 7) === monthKey)
@@ -60,12 +67,25 @@ export default function DashboardPage() {
     const monthSalesValue = monthSales.reduce((sum, sale) => sum + sale.totalAmount, 0)
     const monthPurchaseValue = monthPurchases.reduce((sum, purchase) => sum + purchase.totalAmount, 0)
     const totalProfit = sales.reduce((sum, sale) => {
-      const cost = sale.lineItems.reduce((lineSum, item) => {
-        const variant = brandVariants.find(candidate => candidate.id === item.brandVariantId)
-        return lineSum + (variant?.costPrice || 0) * item.quantity
-      }, 0)
-      return sum + (sale.totalAmount - cost)
+      return sum + (sale.totalAmount - saleCost(sale))
     }, 0)
+    const todayProfit = todaySales.reduce((sum, sale) => sum + (sale.totalAmount - saleCost(sale)), 0)
+    const monthProfit = monthSales.reduce((sum, sale) => sum + (sale.totalAmount - saleCost(sale)), 0)
+    const grossMargin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0
+
+    const productProfitStats = brandVariants
+      .map(variant => {
+        const soldQuantity = sales.flatMap(sale => sale.lineItems).filter(item => item.brandVariantId === variant.id).reduce((sum, item) => sum + item.quantity, 0)
+        const revenue = sales.flatMap(sale => sale.lineItems).filter(item => item.brandVariantId === variant.id).reduce((sum, item) => sum + item.totalAmount, 0)
+        const cost = soldQuantity * variant.costPrice
+        const profit = revenue - cost
+        const margin = revenue > 0 ? (profit / revenue) * 100 : 0
+
+        return { soldQuantity, revenue, cost, profit, margin }
+      })
+      .filter(item => item.soldQuantity > 0)
+
+    const lowMarginSkus = productProfitStats.filter(item => item.margin > 0 && item.margin < 15).length
 
     return {
       todaySalesValue,
@@ -74,6 +94,10 @@ export default function DashboardPage() {
       totalSales,
       totalPurchases,
       totalProfit,
+      todayProfit,
+      monthProfit,
+      grossMargin,
+      lowMarginSkus,
     }
   }, [brandVariants, purchases, sales])
 
@@ -194,6 +218,30 @@ export default function DashboardPage() {
             })}
           </CardContent>
         </Card>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: 'Today Profit', value: formatCurrency(metrics.todayProfit), icon: TrendingUp, tone: 'border-emerald-200 bg-emerald-50/70 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300' },
+          { label: 'Month Profit', value: formatCompactCurrency(metrics.monthProfit), icon: BadgeDollarSign, tone: 'border-sky-200 bg-sky-50/70 text-sky-700 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-300' },
+          { label: 'Gross Margin', value: `${metrics.grossMargin.toFixed(1)}%`, icon: Percent, tone: 'border-cyan-200 bg-cyan-50/70 text-cyan-700 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-300' },
+          { label: 'Low-Margin SKUs', value: metrics.lowMarginSkus, icon: AlertTriangle, tone: 'border-amber-200 bg-amber-50/70 text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300' },
+        ].map(item => {
+          const Icon = item.icon
+          return (
+            <Card key={item.label} className="border-border/60 bg-card shadow-lg">
+              <CardContent className="flex items-center gap-4 p-4">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border ${item.tone}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">{item.label}</p>
+                  <p className="truncate text-xl font-semibold">{item.value}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
