@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hardware Shop Features</title>
+  <style>
+    :root{
+      --ink:#0f172a;
+      --muted:#55657d;
+      --line:#d8e4f2;
+      --panel:#ffffff;
+      --shadow:0 12px 28px rgba(37,99,235,.07);
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
+    body{
+      font-family:"Segoe UI",Inter,Arial,sans-serif;
+      color:var(--ink);
+      background:#fff;
+      line-height:1.4;
+    }
+    .footer{
+      display:none;
+    }
+    .wrap{
+      max-width:1100px;
+      margin:0 auto;
+      padding:18px 16px 28px;
+    }
+    .page{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:14px;
+      align-items:start;
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:16px;
+      box-shadow:var(--shadow);
+      padding:14px;
+      margin-bottom:14px;
+      page-break-inside:avoid;
+      break-inside:avoid;
+      page-break-after:always;
+      break-after:page;
+    }
+    .page:last-child{
+      page-break-after:auto;
+      break-after:auto;
+    }
+    .left h1,
+    .left h2{
+      margin:0;
+      font-size:20px;
+      line-height:1.15;
+    }
+    .left .sub{
+      margin:4px 0 10px;
+      color:var(--muted);
+      font-size:13px;
+    }
+    ul{
+      margin:0 0 0 18px;
+      padding:0;
+    }
+    li{
+      margin-bottom:6px;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .cards{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+      margin-top:10px;
+    }
+    .card{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 11px 9px;
+      background:#fff;
+    }
+    .card h3{
+      margin:0 0 5px;
+      font-size:14px;
+    }
+    .card ul{margin-left:16px}
+    .diagram{
+      min-height:100%;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fbfdff;
+      padding:6px 4px 0;
+      overflow:hidden;
+    }
+    .mermaid{
+      font-size:12px;
+    }
+    .page-list{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    .page-item{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+    }
+    .page-item h3{
+      margin:0 0 5px;
+      font-size:14px;
+    }
+    .page-item ul{margin-left:16px}
+    @media (max-width: 860px){
+      .wrap{padding:12px}
+      .page{grid-template-columns:1fr}
+      .cards,.page-list{grid-template-columns:1fr}
+    }
+    @media print{
+      @page{size:A4 portrait;margin:8mm}
+      .wrap{max-width:none;padding:0}
+      .page{
+        padding:10px;
+        gap:10px;
+        border-radius:0;
+        box-shadow:none;
+        border-left:none;
+        border-right:none;
+        border-top:none;
+      }
+      .left h1,.left h2{font-size:18px}
+      .left .sub,.card h3,.page-item h3{font-size:11px}
+      li{font-size:10px;margin-bottom:4px}
+      .cards,.page-list{gap:8px}
+      .card,.page-item{padding:8px}
+      .diagram{padding:3px 3px 0}
+      .mermaid{font-size:10px}
+      .footer{
+        display:block;
+        position:fixed;
+        left:0;
+        right:0;
+        bottom:0;
+        text-align:center;
+        padding:2px 0 3px;
+        font-size:11px;
+        font-weight:700;
+        color:#334155;
+        background:#fff;
+        border-top:1px solid #d8e4f2;
+      }
+      .footer::after{content:counter(page)}
+    }
+  </style>
+</head>
+<body>
+  <div class="footer"></div>
+  <div class="wrap">
+    <section class="page">
+      <div class="left">
+        <h1>All Features</h1>
+        <div class="sub">Current live app summary.</div>
+        <div class="cards">
+          <div class="card">
+            <h3>Login and access</h3>
+            <ul>
+              <li>Login page</li>
+              <li>User roles</li>
+              <li>Admin access</li>
+              <li>Top bar actions</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Navigation</h3>
+            <ul>
+              <li>Sidebar menu</li>
+              <li>Mobile drawer</li>
+              <li>Light and dark theme</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Pages</h3>
+            <ul>
+              <li>Dashboard</li>
+              <li>Products</li>
+              <li>Customers</li>
+              <li>Suppliers</li>
+              <li>Purchases</li>
+              <li>Sales</li>
+              <li>Inventory</li>
+              <li>Ledger</li>
+              <li>Reports</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>Shop data</h3>
+            <ul>
+              <li>Product tree</li>
+              <li>Stock tracking</li>
+              <li>Customer dues</li>
+              <li>Supplier dues</li>
+              <li>Profit reports</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  A([Start / Login]) --> B[Dashboard]
+  B --> C{Open page?}
+  C -->|Yes| D[Choose module]
+  C -->|No| E[Stay on dashboard]
+  D --> F([End])
+  E --> F
+        </pre>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="left">
+        <h2>Dashboard</h2>
+        <div class="sub">Quick business view and alerts.</div>
+        <ul>
+          <li>Sales and purchases summary</li>
+          <li>Customer and supplier counts</li>
+          <li>Low stock alerts</li>
+          <li>Profit cards and charts</li>
+        </ul>
+      </div>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  A([Start]) --> B[Dashboard]
+  B --> C{Need action?}
+  C -->|Yes| D[Open page]
+  C -->|No| E[Review summary]
+  D --> F([End])
+  E --> F
+        </pre>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="left">
+        <h2>Products</h2>
+        <div class="sub">Hardware item structure.</div>
+        <ul>
+          <li>Create category to brand variant</li>
+          <li>Add stock, price, barcode, reorder level</li>
+          <li>Good for paints, cement, wood, fittings, tools</li>
+          <li>Browse the product tree</li>
+        </ul>
+      </div>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  A([Start]) --> B[Category]
+  B --> C[Subcategory]
+  C --> D[Product Type]
+  D --> E[Model]
+  E --> F[Brand Variant]
+  F --> G{Stock ready?}
+  G -->|Yes| H[/Ready for sale/]
+  G -->|No| I[Buy more stock]
+  H --> J([End])
+  I --> J
+        </pre>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="left">
+        <h2>Purchases</h2>
+        <div class="sub">Buy goods from suppliers.</div>
+        <ul>
+          <li>Create purchase order</li>
+          <li>Select supplier and items</li>
+          <li>Record paid or due amount</li>
+          <li>Increase stock and supplier balance</li>
+        </ul>
+      </div>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  A([Start]) --> B[Supplier]
+  B --> C[Purchase Order]
+  C --> D[Receive Items]
+  D --> E{Paid fully?}
+  E -->|Yes| F[/Bill closed/]
+  E -->|No| G[Keep supplier due]
+  F --> H[Inventory up]
+  G --> H
+  H --> I([End])
+        </pre>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="left">
+        <h2>Sales</h2>
+        <div class="sub">Sell goods to customers.</div>
+        <ul>
+          <li>Create sales invoice</li>
+          <li>Select customer and items</li>
+          <li>Apply discount</li>
+          <li>Track paid or due amount</li>
+        </ul>
+      </div>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  A([Start]) --> B[Customer]
+  B --> C[Sales Invoice]
+  C --> D[Add Items]
+  D --> E[Apply Discount]
+  E --> F{Paid fully?}
+  F -->|Yes| G[/Invoice closed/]
+  F -->|No| H[Keep customer due]
+  G --> I[Inventory down]
+  H --> I
+  I --> J([End])
+        </pre>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="left">
+        <h2>Inventory</h2>
+        <div class="sub">Stock control page.</div>
+        <ul>
+          <li>Current stock view</li>
+          <li>Low stock alerts</li>
+          <li>Reorder level check</li>
+          <li>Stock adjustments</li>
+        </ul>
+      </div>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  A([Start]) --> B[Current stock]
+  B --> C{Low stock?}
+  C -->|Yes| D[Show alert]
+  C -->|No| E[/Keep normal stock/]
+  D --> F[Reorder check]
+  E --> F
+  F --> G([End])
+        </pre>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="left">
+        <h2>Ledger</h2>
+        <div class="sub">Customer and supplier dues.</div>
+        <ul>
+          <li>Customer due tracking</li>
+          <li>Supplier due tracking</li>
+          <li>Balance view in one place</li>
+          <li>Credit control support</li>
+        </ul>
+      </div>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  A([Start]) --> B[Customer due]
+  B --> C[Supplier due]
+  C --> D[/Balance view/]
+  D --> E([End])
+        </pre>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="left">
+        <h2>Reports</h2>
+        <div class="sub">Profit and PDF export.</div>
+        <ul>
+          <li>Daily, monthly, yearly, custom filters</li>
+          <li>Profit cards and charts</li>
+          <li>Top products and analysis tables</li>
+          <li>PDF download</li>
+        </ul>
+      </div>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  A([Start]) --> B[Select date]
+  B --> C[Filter data]
+  C --> D[View profit]
+  D --> E{Need PDF?}
+  E -->|Yes| F[/Download PDF/]
+  E -->|No| G[Keep reviewing]
+  F --> H([End])
+  G --> H
+        </pre>
+      </div>
+    </section>
+
+    <section class="page">
+      <div class="left">
+        <h2>Customers and Suppliers</h2>
+        <div class="page-list">
+          <div class="page-item">
+            <h3>Customers</h3>
+            <ul>
+              <li>Contact details</li>
+              <li>Credit details</li>
+              <li>Sales history</li>
+            </ul>
+          </div>
+          <div class="page-item">
+            <h3>Suppliers</h3>
+            <ul>
+              <li>Contact details</li>
+              <li>Credit details</li>
+              <li>Purchase history</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TD
+  A([Start]) --> B[Customer records]
+  B --> C[Supplier records]
+  C --> D[Credit history]
+  D --> E([End])
+        </pre>
+      </div>
+    </section>
+  </div>
+
+  <script src="../node_modules/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      securityLevel: "loose",
+      theme: "base",
+      themeVariables: {
+        primaryColor: "#ffffff",
+        primaryTextColor: "#0f172a",
+        primaryBorderColor: "#6f9fe2",
+        lineColor: "#64748b",
+        fontFamily: "Segoe UI, Inter, Arial, sans-serif",
+        fontSize: "14px"
+      }
+    });
+  </script>
+</body>
+</html>

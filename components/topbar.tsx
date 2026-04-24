@@ -26,6 +26,7 @@ import {
   Box,
   ChevronDown,
   CircleAlert,
+  Download,
   Grid2x2,
   LayoutDashboard,
   LogOut,
@@ -103,6 +104,18 @@ export function TopBar() {
         <h2 className="truncate text-lg font-semibold tracking-tight sm:text-xl">{title}</h2>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 border-sky-200/70 bg-white/90 text-slate-900 hover:bg-white dark:border-sidebar-border dark:bg-sidebar dark:text-sidebar-foreground dark:hover:bg-sidebar-accent dark:hover:text-sidebar-accent-foreground"
+            asChild
+          >
+            <a href="/HARDWARE_SHOP_CLIENT_DEMO.pdf" download="Hardware Shop Features.pdf" aria-label="Download hardware shop PDF">
+              <Download className="h-4 w-4" />
+            </a>
+          </Button>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
