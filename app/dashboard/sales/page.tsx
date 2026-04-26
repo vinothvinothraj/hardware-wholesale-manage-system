@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useStore } from '@/lib/store';
 import { ProductPicker } from '@/components/product-picker';
+import { QuotationBuilderCard } from '@/components/quotation-builder-card';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,6 +39,7 @@ import { formatCurrency } from '@/lib/utils';
 export default function SalesPage() {
   const store = useStore();
   const [open, setOpen] = useState(false);
+  const [quotationOpen, setQuotationOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [newCustomerCompanyName, setNewCustomerCompanyName] = useState('');
@@ -314,6 +316,19 @@ export default function SalesPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <Dialog open={quotationOpen} onOpenChange={setQuotationOpen}>
+        <DialogContent className="!top-4 !left-4 !right-4 !bottom-4 !translate-x-0 !translate-y-0 !w-auto !max-w-none !max-h-none p-4 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Create Quotation</DialogTitle>
+            <DialogDescription>Build and export a quotation inside the popup modal.</DialogDescription>
+          </DialogHeader>
+          <div className="h-full overflow-y-auto">
+            <QuotationBuilderCard onSaved={() => setQuotationOpen(false)} />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="!w-[95vw] !max-w-[90rem] max-h-[90vh] overflow-y-auto">
@@ -580,7 +595,6 @@ export default function SalesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </div>
 
         <Dialog open={!!editingSale} onOpenChange={open => !open && setEditingSale(null)}>
           <DialogContent className="w-[96vw] sm:max-w-4xl md:max-w-5xl lg:max-w-6xl xl:max-w-7xl max-h-[90vh] overflow-y-auto">
@@ -741,9 +755,9 @@ export default function SalesPage() {
       <Card>
         <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <CardTitle>Sales Orders</CardTitle>
-          <Button className="h-11 gap-2 px-5" onClick={() => setOpen(true)}>
+          <Button className="h-11 gap-2 px-5" onClick={() => setQuotationOpen(true)}>
             <Plus className="w-4 h-4" />
-            Create Sales Order
+            Create Quotation
           </Button>
         </CardHeader>
         <CardContent>
