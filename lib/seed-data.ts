@@ -360,38 +360,7 @@ const purchases: Purchase[] = catalogBlueprints.map((category, index) => {
   }
 })
 
-const sales: Sale[] = catalogBlueprints.map((category, index) => {
-  const variant = categoryFeaturedVariants[index]
-  const totalAmount = salesTotals[index]
-  const paidAmount = index % 2 === 0 ? Math.round(totalAmount * 0.62) : totalAmount
-  const discountAmount = index % 2 === 0 ? Math.round(totalAmount * 0.05) : 0
-  const subtotal = totalAmount + discountAmount
-  return {
-    id: `sal-${String(index + 1).padStart(3, '0')}`,
-    customerId: `cus-${category.key}`,
-    lineItems: [
-      {
-        id: `sli-${String(index + 1).padStart(3, '0')}`,
-        brandVariantId: variant.id,
-        quantity: Math.max(4, Math.round(totalAmount / variant.sellingPrice)),
-        unitPrice: variant.sellingPrice,
-        discount: discountAmount,
-        totalAmount,
-      },
-    ],
-    subtotal,
-    discountAmount,
-    totalAmount,
-    paidAmount,
-    dueAmount: totalAmount - paidAmount,
-    status: paidAmount >= totalAmount ? 'paid' : 'completed',
-    invoiceNumber: `SAL-2026-00${index + 1}`,
-    saleDate: daysAgo(16 - index * 2),
-    dueDate: daysAgo(4 - index),
-    notes: `${category.name} wholesale sale sample`,
-    createdAt: daysAgo(16 - index * 2),
-  }
-})
+const sales: Sale[] = []
 
 const payments: Payment[] = [
   {
@@ -406,9 +375,9 @@ const payments: Payment[] = [
   },
   {
     id: 'pay-002',
-    transactionId: sales[1].id,
-    transactionType: 'sale',
-    amount: sales[1].paidAmount,
+    transactionId: purchases[1].id,
+    transactionType: 'purchase',
+    amount: purchases[1].paidAmount,
     paymentDate: daysAgo(14),
     paymentMethod: 'cash',
     reference: 'CS-APR-002',
@@ -426,9 +395,9 @@ const payments: Payment[] = [
   },
   {
     id: 'pay-004',
-    transactionId: sales[3].id,
-    transactionType: 'sale',
-    amount: sales[3].paidAmount,
+    transactionId: purchases[3].id,
+    transactionType: 'purchase',
+    amount: purchases[3].paidAmount,
     paymentDate: daysAgo(8),
     paymentMethod: 'cheque',
     reference: 'CHQ-77821',
@@ -529,7 +498,7 @@ const customers: Customer[] = catalogBlueprints.map((category, index) => ({
     '9 University Avenue, Colombo 07',
   ][index],
   creditLimit: customerCredits[index],
-  outstandingBalance: sales[index].dueAmount,
+  outstandingBalance: 0,
   createdAt: daysAgo(29 - index),
 }))
 

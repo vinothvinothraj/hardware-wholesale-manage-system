@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '@/lib/store';
 import { ProductPicker } from '@/components/product-picker';
 import { QuotationBuilderCard } from '@/components/quotation-builder-card';
@@ -35,11 +35,42 @@ import {
 } from '@/components/ui/table';
 import { Plus, Trash2, Eye, Printer, AlertCircle, PencilLine, ShoppingCart, Landmark, BadgeDollarSign, Clock3 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { buildQuotationDocument, loadImageDataUrl, mapSavedQuotationToPrintPayload, waitForWindowImages } from '@/lib/quotation-print';
+
+type QuotationRecord = {
+  id: string;
+  savedAt: string;
+  quoteNumber: string;
+  quoteDate: string;
+  validUntil: string;
+  customerName: string;
+  customerContact: string;
+  customerPhone: string;
+  customerEmail: string;
+  customerAddress: string;
+  notes: string;
+  lines: Array<{
+    id: string;
+    productId: string;
+    itemName: string;
+    description: string;
+    quantity: string;
+    rate: string;
+    discount: string;
+    discountType: 'fixed' | 'percent';
+  }>;
+  subtotal: number;
+  discountTotal: number;
+  grandTotal: number;
+};
+
+const QUOTATION_STORAGE_KEY = 'quotation_builder_saves';
 
 export default function SalesPage() {
   const store = useStore();
   const [open, setOpen] = useState(false);
   const [quotationOpen, setQuotationOpen] = useState(false);
+  const [quotationRecords, setQuotationRecords] = useState<QuotationRecord[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState('');
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [newCustomerCompanyName, setNewCustomerCompanyName] = useState('');
@@ -72,6 +103,31 @@ export default function SalesPage() {
   const [editDueDate, setEditDueDate] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editPaidAmount, setEditPaidAmount] = useState('0');
+
+  const loadQuotationRecords = () => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const raw = window.localStorage.getItem(QUOTATION_STORAGE_KEY);
+      const parsed = raw ? (JSON.parse(raw) as QuotationRecord[]) : [];
+      setQuotationRecords(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setQuotationRecords([]);
+    }
+  };
+
+  useEffect(() => {
+    loadQuotationRecords();
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === QUOTATION_STORAGE_KEY) {
+        loadQuotationRecords();
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   const handleAddLineItem = () => {
     if (!selectedBrand || !quantity || !unitPrice) return;
@@ -185,6 +241,34 @@ export default function SalesPage() {
     store.recordSalePayment(selectedPaymentSale, parseFloat(paymentAmount));
     setPaymentAmount('');
     setSelectedPaymentSale(null);
+  };
+
+  const handleDeleteQuotation = (id: string) => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const current = JSON.parse(window.localStorage.getItem(QUOTATION_STORAGE_KEY) || '[]') as QuotationRecord[];
+      const next = current.filter(record => record.id !== id);
+      window.localStorage.setItem(QUOTATION_STORAGE_KEY, JSON.stringify(next));
+      setQuotationRecords(next);
+    } catch {
+      setQuotationRecords([]);
+    }
+  };
+
+  const printQuotationRecord = async (record: QuotationRecord) => {
+    const quotePayload = mapSavedQuotationToPrintPayload(record);
+    const logoDataUrl = await loadImageDataUrl('/dtc-logo.jpeg');
+    const html = buildQuotationDocument(quotePayload, logoDataUrl);
+    const win = window.open('', '_blank', 'width=1200,height=900');
+    if (!win) return;
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    await waitForWindowImages(win);
+    win.print();
   };
 
   const handleEditAddLineItem = () => {
@@ -325,7 +409,7 @@ export default function SalesPage() {
             <DialogDescription>Build and export a quotation inside the popup modal.</DialogDescription>
           </DialogHeader>
           <div className="h-full overflow-y-auto">
-            <QuotationBuilderCard onSaved={() => setQuotationOpen(false)} />
+            <QuotationBuilderCard onSaved={() => { loadQuotationRecords(); setQuotationOpen(false); }} />
           </div>
         </DialogContent>
       </Dialog>
@@ -754,103 +838,42 @@ export default function SalesPage() {
       {/* Sales Table */}
       <Card>
         <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <CardTitle>Sales Orders</CardTitle>
+          <CardTitle>Saved Quotations</CardTitle>
           <Button className="h-11 gap-2 px-5" onClick={() => setQuotationOpen(true)}>
             <Plus className="w-4 h-4" />
             Create Quotation
           </Button>
         </CardHeader>
         <CardContent>
-          {store.sales.length > 0 ? (
+          {quotationRecords.length > 0 ? (
             <div className="border rounded-lg overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Invoice</TableHead>
+                    <TableHead>Quotation</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Items</TableHead>
                     <TableHead>Total</TableHead>
-                    <TableHead>Paid</TableHead>
-                    <TableHead>Due</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {store.sales.map(sale => {
-                    const customer = store.customers.find(c => c.id === sale.customerId);
+                  {quotationRecords.map(record => {
                     return (
-                      <TableRow key={sale.id}>
-                        <TableCell className="font-medium">{sale.invoiceNumber}</TableCell>
-                        <TableCell>{customer?.companyName || 'Unknown'}</TableCell>
-                        <TableCell>{new Date(sale.saleDate).toLocaleDateString()}</TableCell>
-                        <TableCell>{sale.lineItems.length}</TableCell>
-                        <TableCell>LKR {sale.totalAmount.toLocaleString()}</TableCell>
-                        <TableCell>LKR {sale.paidAmount.toLocaleString()}</TableCell>
-                        <TableCell className={sale.dueAmount > 0 ? 'text-amber-600 font-medium' : 'text-muted-foreground'}>
-                          LKR {sale.dueAmount.toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            sale.status === 'paid' ? 'bg-green-100 text-green-700' :
-                            sale.status === 'completed' ? 'bg-blue-100 text-blue-700' :
-                            'bg-yellow-100 text-yellow-700'
-                          }`}>
-                            {sale.status.charAt(0).toUpperCase() + sale.status.slice(1)}
-                          </span>
-                        </TableCell>
+                      <TableRow key={record.id}>
+                        <TableCell className="font-medium">{record.quoteNumber}</TableCell>
+                        <TableCell>{record.customerName || 'Walk-in customer'}</TableCell>
+                        <TableCell>{new Date(record.quoteDate).toLocaleDateString()}</TableCell>
+                        <TableCell>{record.lines.length}</TableCell>
+                        <TableCell>{formatCurrency(record.grandTotal)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => openEditSale(sale)}
-                            >
-                              <PencilLine className="w-4 h-4" />
-                            </Button>
-                            {sale.dueAmount > 0 && (
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setSelectedPaymentSale(sale.id)}
-                                  >
-                                    <AlertCircle className="w-4 h-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[400px]">
-                                  <DialogHeader>
-                                    <DialogTitle>Record Payment</DialogTitle>
-                                    <DialogDescription>
-                                      Invoice: {sale.invoiceNumber} | Due: LKR {sale.dueAmount.toLocaleString()}
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <div className="space-y-4">
-                                    <div>
-                                      <Label>Payment Amount *</Label>
-                                      <Input
-                                        type="number"
-                                        value={paymentAmount}
-                                        onChange={(e) => setPaymentAmount(e.target.value)}
-                                        placeholder="0"
-                                      />
-                                    </div>
-                                  </div>
-                                  <DialogFooter>
-                                    <Button variant="outline" onClick={() => setPaymentAmount('')}>
-                                      Cancel
-                                    </Button>
-                                    <Button onClick={handleRecordPayment}>
-                                      Record Payment
-                                    </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
-                            )}
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={() => printQuotationRecord(record)}>
                               <Printer className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleDeleteQuotation(record.id)}>
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -862,7 +885,7 @@ export default function SalesPage() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No sales yet. Create one to get started.</p>
+              <p className="text-muted-foreground">No saved quotations yet. Create one to get started.</p>
             </div>
           )}
         </CardContent>
